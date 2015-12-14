@@ -11,18 +11,64 @@
 #import "AFNetworking.h"
 #import <CoreLocation/CoreLocation.h>
 #import "KFPaginationInfo.h"
+#import "KFUser.h"
+
+
 
 /**
  *  Use KFAPIClient to interact with the kickflip.io API.
  */
-@interface KFAPIClient : AFHTTPSessionManager
+
+@protocol KFAPIClient <NSObject>
+
+@required
+
+///-------------------------------
+/// @name Users
+///-------------------------------
+
+/**
+ *  Logs in an existing user. This fetches the credentials required for streaming
+ *  and makes it the current active KFUser.
+ *
+ *  @param username Existing Kickflip username
+ *  @param password User's password
+ *  @param callbackBlock called when the request completes with either an active user or an error
+ */
+- (void) loginExistingUserWithUsername:(NSString*)username password:(NSString*)password callbackBlock:(void (^)(id<KFUser> activeUser, NSError *error))callbackBlock;
+
+///-------------------------------
+/// @name Stream Lifecycle
+///-------------------------------
+
+/**
+ *  Starts a new public stream to be fed to KFRecorder
+ *
+ *  @param endpointCallback Called when request completes for new stream or error
+ */
+- (void) startNewStream:(void (^)(id <KFStream> newStream, NSError *error))endpointCallback;
+
+/**
+ *  Marks the stream as stopped on the server
+ *
+ *  @param stream        stream to be stopped
+ *  @param callbackBlock (optional) whether or not this was successful
+ */
+- (void) stopStream:(id <KFStream>)stream callbackBlock:(void (^)(BOOL success, NSError *error))callbackBlock;
+
+///-------------------------------
+/// @name Utility
+///-------------------------------
+
 
 /**
  *  Singleton for easy access around your project
  *
  *  @return KFAPIClient singleton
  */
-+ (KFAPIClient*) sharedClient;
++ (instancetype) sharedClient;
+
+@optional
 
 
 ///-------------------------------
@@ -35,7 +81,7 @@
  *  @param username      (optional) desired username
  *  @param callbackBlock called when the request completes with either an active user or an error
  */
-- (void) requestNewActiveUserWithUsername:(NSString*)username callbackBlock:(void (^)(KFUser *activeUser, NSError *error))callbackBlock;
+- (void) requestNewActiveUserWithUsername:(NSString*)username callbackBlock:(void (^)(id<KFUser> activeUser, NSError *error))callbackBlock;
 
 /**
  *  Requests new active KFUser.
@@ -47,17 +93,9 @@
  *  @param extraInfo Any additional context-specific information you'd like to store for your user.
  *  @param callbackBlock called when the request completes with either an active user or an error
  */
-- (void) requestNewActiveUserWithUsername:(NSString*)username password:(NSString*)password email:(NSString*)email  displayName:(NSString*)displayName extraInfo:(NSDictionary*)extraInfo callbackBlock:(void (^)(KFUser *activeUser, NSError *error))callbackBlock;
+- (void) requestNewActiveUserWithUsername:(NSString*)username password:(NSString*)password email:(NSString*)email  displayName:(NSString*)displayName extraInfo:(NSDictionary*)extraInfo callbackBlock:(void (^)(id<KFUser> activeUser, NSError *error))callbackBlock;
 
-/**
- *  Logs in an existing user. This fetches the credentials required for streaming
- *  and makes it the current active KFUser.
- *
- *  @param username Existing Kickflip username
- *  @param password User's password
- *  @param callbackBlock called when the request completes with either an active user or an error
- */
-- (void) loginExistingUserWithUsername:(NSString*)username password:(NSString*)password callbackBlock:(void (^)(KFUser *activeUser, NSError *error))callbackBlock;
+
 
 /**
  *  Updates existing user metadata.
@@ -68,7 +106,7 @@
  *  @param extraInfo Any additional context-specific information you'd like to store for your user.
  *  @param callbackBlock called when the request completes with either an active user or an error
  */
-- (void) updateMetadataForActiveUserWithNewPassword:(NSString*)newPassword email:(NSString*)email displayName:(NSString*)displayName extraInfo:(NSDictionary*)extraInfo callbackBlock:(void (^)(KFUser *updatedUser, NSError *error))callbackBlock;
+- (void) updateMetadataForActiveUserWithNewPassword:(NSString*)newPassword email:(NSString*)email displayName:(NSString*)displayName extraInfo:(NSDictionary*)extraInfo callbackBlock:(void (^)(id<KFUser> updatedUser, NSError *error))callbackBlock;
 
 /**
  *  Fetches public data for an existing username.
@@ -77,33 +115,19 @@
  *  @param callbackBlock Serialized existing user or error
  *
  */
-- (void) requestUserInfoForUsername:(NSString*)username callbackBlock:(void (^)(KFUser *existingUser, NSError *error))callbackBlock;
+- (void) requestUserInfoForUsername:(NSString*)username callbackBlock:(void (^)(id<KFUser> existingUser, NSError *error))callbackBlock;
 
 ///-------------------------------
 /// @name Stream Lifecycle
 ///-------------------------------
 
 /**
- *  Starts a new public stream to be fed to KFRecorder
- *
- *  @param endpointCallback Called when request completes for new stream or error
- */
-- (void) startNewStream:(void (^)(KFStream *newStream, NSError *error))endpointCallback;
-
-/**
  *  Starts a new private stream to be fed to KFRecorder
  *
  *  @param endpointCallback Called when request completes for new stream or error
  */
-- (void) startNewPrivateStream:(void (^)(KFStream *newStream, NSError *error))endpointCallback;
+- (void) startNewPrivateStream:(void (^)(id <KFStream> newStream, NSError *error))endpointCallback;
 
-/**
- *  Marks the stream as stopped on the server
- *
- *  @param stream        stream to be stopped
- *  @param callbackBlock (optional) whether or not this was successful
- */
-- (void) stopStream:(KFStream*)stream callbackBlock:(void (^)(BOOL success, NSError *error))callbackBlock;
 
 /**
  *  Posts to /api/stream/change the changes in your KFStream. This will return a new
@@ -112,7 +136,7 @@
  *  @param stream        stream to be updated
  *  @param callbackBlock (optional) serialized KFStream response or error
  */
-- (void) updateMetadataForStream:(KFStream*)stream callbackBlock:(void (^)(KFStream* updatedStream, NSError *error))callbackBlock;
+- (void) updateMetadataForStream:(id <KFStream>)stream callbackBlock:(void (^)(id <KFStream> updatedStream, NSError *error))callbackBlock;
 
 ///-------------------------------
 /// @name Stream Search
@@ -127,7 +151,7 @@
  *  @param callbackBlock Returns array of KFStream and a KFPaginationInfo for pagination information, or an error.
  *  @see KFPaginationInfo
  */
-- (void) requestStreamsForUsername:(NSString*)username pageNumber:(NSUInteger)pageNumber itemsPerPage:(NSUInteger)itemsPerPage callbackBlock:(void (^)(NSArray *streams, KFPaginationInfo *paginationInfo, NSError *error))callbackBlock;
+- (void) requestStreamsForUsername:(NSString*)username pageNumber:(NSUInteger)pageNumber itemsPerPage:(NSUInteger)itemsPerPage callbackBlock:(void (^)(NSArray *streams, id<KFPaginationInfo> paginationInfo, NSError *error))callbackBlock;
 
 /**
  *  Returns all the streams created near a certain location
@@ -139,7 +163,7 @@
  *  @param callbackBlock Returns array of KFStream and a KFPaginationInfo for pagination information, or an error.
  *  @see KFPaginationInfo
  */
-- (void) requestStreamsForLocation:(CLLocation*)location radius:(CLLocationDistance)radius pageNumber:(NSUInteger)pageNumber itemsPerPage:(NSUInteger)itemsPerPage callbackBlock:(void (^)(NSArray *streams, KFPaginationInfo *paginationInfo, NSError *error))callbackBlock;
+- (void) requestStreamsForLocation:(CLLocation*)location radius:(CLLocationDistance)radius pageNumber:(NSUInteger)pageNumber itemsPerPage:(NSUInteger)itemsPerPage callbackBlock:(void (^)(NSArray *streams, id<KFPaginationInfo> paginationInfo, NSError *error))callbackBlock;
 
 /**
  *  Returns all the streams with metadata containing keyword
@@ -150,7 +174,7 @@
  *  @param callbackBlock Returns array of KFStream and a KFPaginationInfo for pagination information, or an error.
  *  @see KFPaginationInfo
  */
-- (void) requestStreamsByKeyword:(NSString*)keyword pageNumber:(NSUInteger)pageNumber itemsPerPage:(NSUInteger)itemsPerPage callbackBlock:(void (^)(NSArray *streams, KFPaginationInfo *paginationInfo, NSError *error))callbackBlock;
+- (void) requestStreamsByKeyword:(NSString*)keyword pageNumber:(NSUInteger)pageNumber itemsPerPage:(NSUInteger)itemsPerPage callbackBlock:(void (^)(NSArray *streams, id<KFPaginationInfo> paginationInfo, NSError *error))callbackBlock;
 
 /**
  *  Returns all the streams associated with this application.
@@ -160,6 +184,9 @@
  *  @param callbackBlock Returns array of KFStream and a KFPaginationInfo for pagination information, or an error.
  *  @see KFPaginationInfo
  */
-- (void) requestAllStreamsWithPageNumber:(NSUInteger)pageNumber itemsPerPage:(NSUInteger)itemsPerPage callbackBlock:(void (^)(NSArray *streams, KFPaginationInfo *paginationInfo, NSError *error))callbackBlock;
+- (void) requestAllStreamsWithPageNumber:(NSUInteger)pageNumber itemsPerPage:(NSUInteger)itemsPerPage callbackBlock:(void (^)(NSArray *streams, id<KFPaginationInfo> *paginationInfo, NSError *error))callbackBlock;
 
+@end
+
+@interface KFAPIClient : AFHTTPSessionManager <KFAPIClient>
 @end

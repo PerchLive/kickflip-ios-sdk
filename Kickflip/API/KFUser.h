@@ -9,11 +9,10 @@
 #import <Foundation/Foundation.h>
 #import "Mantle.h"
 
-/**
- *  Native user model based on Kickflip API responses. All user data within
- *  the public data will be queryable and assumed to be public information.
- */
-@interface KFUser : MTLModel <MTLJSONSerializing>
+
+@protocol KFUser <NSObject>
+
+
 
 ///-------------------------------
 /// @name Public Data
@@ -79,6 +78,13 @@
  *
  *  @param user if this parameter is nil, it will remove the active user.
  */
-+ (void) setActiveUser:(KFUser*)user;
++ (void) setActiveUser:(id<KFUser>)user;
 
+@end
+
+/**
+ *  Native user model based on Kickflip API responses. All user data within
+ *  the public data will be queryable and assumed to be public information.
+ */
+@interface KFUser : MTLModel <MTLJSONSerializing, KFUser>
 @end

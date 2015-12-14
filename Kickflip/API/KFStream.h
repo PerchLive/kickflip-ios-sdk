@@ -24,10 +24,8 @@ typedef NS_ENUM(NSUInteger, KFStreamState) {
 
 extern NSString * const KFStreamTypeKey;
 
-/**
- *  Native object for serialized /api/stream responses
- */
-@interface KFStream : MTLModel <MTLJSONSerializing>
+
+@protocol KFStream <NSObject>
 
 /**
  *  Stream owner, maps to a KFUser
@@ -112,4 +110,11 @@ extern NSString * const KFStreamTypeKey;
  */
 - (BOOL) isLive;
 
+@end
+
+
+/**
+ *  Native object for serialized /api/stream responses
+ */
+@interface KFStream : MTLModel <MTLJSONSerializing, KFStream>
 @end

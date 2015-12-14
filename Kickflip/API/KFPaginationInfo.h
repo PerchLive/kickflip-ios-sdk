@@ -9,10 +9,9 @@
 #import <Foundation/Foundation.h>
 #import "Mantle.h"
 
-/**
- *  Additional pagination metadata for responses that return a list of objects.
- */
-@interface KFPaginationInfo : MTLModel <MTLJSONSerializing>
+
+
+@protocol KFPaginationInfo <NSObject>
 
 /**
  *  Whether or not another page of results is available.
@@ -35,4 +34,10 @@
  */
 @property (nonatomic, readonly) NSUInteger currentPage;
 
+@end
+
+/**
+ *  Additional pagination metadata for responses that return a list of objects.
+ */
+@interface KFPaginationInfo : MTLModel <MTLJSONSerializing, KFPaginationInfo>
 @end
